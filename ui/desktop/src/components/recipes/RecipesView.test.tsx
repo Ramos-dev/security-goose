@@ -10,7 +10,7 @@ import zhCN from '../../i18n/messages/zh-CN.json';
 const mocks = vi.hoisted(() => ({
   listSavedRecipes: vi.fn(),
   setView: vi.fn(),
-  startAgent: vi.fn(),
+  createSession: vi.fn(),
 }));
 
 vi.mock('../../recipe/recipe_management', async () => {
@@ -33,14 +33,9 @@ vi.mock('../../toasts', () => ({
   toastError: vi.fn(),
 }));
 
-vi.mock('../../api', async () => {
-  const actual = await vi.importActual<typeof import('../../api')>('../../api');
-
-  return {
-    ...actual,
-    startAgent: mocks.startAgent,
-  };
-});
+vi.mock('../../sessions', () => ({
+  createSession: mocks.createSession,
+}));
 
 vi.mock('../../utils/workingDir', () => ({
   getInitialWorkingDir: () => '/tmp/security-goose',
@@ -127,12 +122,10 @@ describe('RecipesView built-in security recipes', () => {
         last_modified: '2026-06-14T00:00:00.000Z',
       },
     ]);
-    mocks.startAgent.mockResolvedValue({
-      data: {
-        id: 'session-1',
-        recipe: {
-          prompt: 'Recipe prompt',
-        },
+    mocks.createSession.mockResolvedValue({
+      id: 'session-1',
+      recipe: {
+        prompt: 'Recipe prompt',
       },
     });
   });
@@ -178,11 +171,10 @@ describe('RecipesView built-in security recipes', () => {
     screen.getAllByRole('button', { name: 'Start task' })[0].click();
 
     await waitFor(() => {
-      expect(mocks.startAgent).toHaveBeenCalledWith(
+      expect(mocks.createSession).toHaveBeenCalledWith(
+        '/tmp/security-goose',
         expect.objectContaining({
-          body: expect.objectContaining({
-            recipe_id: 'security-vuln-triage',
-          }),
+          recipeId: 'security-vuln-triage',
         })
       );
       expect(mocks.setView).toHaveBeenCalledWith(

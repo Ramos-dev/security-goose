@@ -80,6 +80,7 @@ const mockSettings: Record<string, unknown> = {
   },
   theme: 'light',
   useSystemTheme: true,
+  language: 'system',
   responseStyle: 'concise',
   showPricing: true,
   sessionSharing: {
@@ -100,6 +101,7 @@ if (typeof window !== 'undefined') {
         mockSettings[key] = value;
         return Promise.resolve();
       }),
+      reloadApp: vi.fn(),
       showMessageBox: vi.fn(() => Promise.resolve({ response: 0 })),
       getIsFullScreen: vi.fn(() => Promise.resolve(false)),
       listManagedSkills: vi.fn(async () => ({
