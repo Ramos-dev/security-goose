@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { startAgent } from '../api';
+import { readConfig, setConfigProvider, startAgent } from '../api';
 import { createSession } from '../sessions';
 import type { ExtensionConfig, Session } from '../api';
 import type { FixedExtensionEntry } from '../components/ConfigContext';
 
-vi.mock('../api', () => ({
-  startAgent: vi.fn(),
-}));
+vi.mock('../api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../api')>();
+  return {
+    ...actual,
+    readConfig: vi.fn(),
+    setConfigProvider: vi.fn(),
+    startAgent: vi.fn(),
+  };
+});
 
 const testSession: Session = {
   id: 'session-1',
@@ -30,10 +36,18 @@ const configuredExtension = (name: string, enabled: boolean): FixedExtensionEntr
 });
 
 const mockedStartAgent = vi.mocked(startAgent);
+const mockedReadConfig = vi.mocked(readConfig);
+const mockedSetConfigProvider = vi.mocked(setConfigProvider);
 
 describe('createSession extension overrides', () => {
   beforeEach(() => {
     mockedStartAgent.mockReset();
+    mockedReadConfig.mockReset();
+    mockedSetConfigProvider.mockReset();
+
+    mockedReadConfig.mockImplementation(async ({ body }) => ({
+      data: body.key === 'GOOSE_PROVIDER' ? 'openai' : 'gpt-4.1',
+    }));
     mockedStartAgent.mockResolvedValue({
       data: testSession,
       error: undefined,
@@ -54,6 +68,7 @@ describe('createSession extension overrides', () => {
       },
       throwOnError: true,
     });
+    expect(mockedSetConfigProvider).not.toHaveBeenCalled();
   });
 
   it('falls back to enabled configured extensions when extension configs are empty', async () => {
@@ -69,6 +84,7 @@ describe('createSession extension overrides', () => {
       },
       throwOnError: true,
     });
+    expect(mockedSetConfigProvider).not.toHaveBeenCalled();
   });
 
   it('omits extension overrides when no configured extensions are enabled', async () => {
@@ -82,5 +98,6 @@ describe('createSession extension overrides', () => {
       },
       throwOnError: true,
     });
+    expect(mockedSetConfigProvider).not.toHaveBeenCalled();
   });
 });

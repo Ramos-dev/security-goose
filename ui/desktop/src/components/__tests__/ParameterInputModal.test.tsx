@@ -48,7 +48,7 @@ describe('ParameterInputModal', () => {
     it('renders modal with parameters', () => {
       renderWithIntl(<ParameterInputModal {...defaultProps} />);
 
-      expect(screen.getByText('Recipe Parameters')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Task Parameters' })).toBeInTheDocument();
       expect(screen.getByText('Test parameter 1')).toBeInTheDocument();
       expect(screen.getByText('Test parameter 2')).toBeInTheDocument();
       expect(screen.getByText('Boolean parameter')).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('ParameterInputModal', () => {
       await user.type(screen.getByLabelText(/test parameter 1/i), 'test value');
       await user.selectOptions(screen.getByLabelText(/test parameter 2/i), 'option2');
 
-      const submitButton = screen.getByText('Start Recipe');
+      const submitButton = screen.getByRole('button', { name: 'Start Task' });
       await user.click(submitButton);
 
       expect(defaultProps.onSubmit).toHaveBeenCalledWith({
@@ -84,7 +84,7 @@ describe('ParameterInputModal', () => {
       const user = userEvent.setup();
       renderWithIntl(<ParameterInputModal {...defaultProps} />);
 
-      const submitButton = screen.getByText('Start Recipe');
+      const submitButton = screen.getByRole('button', { name: 'Start Task' });
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -109,7 +109,7 @@ describe('ParameterInputModal', () => {
         />
       );
 
-      const submitButton = screen.getByText('Start Recipe');
+      const submitButton = screen.getByRole('button', { name: 'Start Task' });
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -127,7 +127,7 @@ describe('ParameterInputModal', () => {
       const cancelButton = screen.getByText('Cancel');
       await user.click(cancelButton);
 
-      expect(screen.getByText('Cancel Recipe Setup')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Cancel Task Setup' })).toBeInTheDocument();
       expect(screen.getByText('What would you like to do?')).toBeInTheDocument();
     });
 
@@ -146,7 +146,7 @@ describe('ParameterInputModal', () => {
       renderWithIntl(<ParameterInputModal {...defaultProps} />);
 
       await user.click(screen.getByText('Cancel'));
-      await user.click(screen.getByText('Start New Chat (No Recipe)'));
+      await user.click(screen.getByRole('button', { name: 'Start New Chat (No Task Template)' }));
 
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
@@ -161,7 +161,7 @@ describe('ParameterInputModal', () => {
       const backButton = screen.getByText('Back to Parameter Form');
       await user.click(backButton);
 
-      expect(screen.getByText('Recipe Parameters')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Task Parameters' })).toBeInTheDocument();
       expect(defaultProps.onClose).not.toHaveBeenCalled();
     });
   });
