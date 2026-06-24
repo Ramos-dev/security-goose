@@ -61,6 +61,18 @@ function getUpdatesDisabledMessage(): string {
   return 'Release update checks are disabled in this desktop build.';
 }
 
+let autoDownloadDisabled = false;
+
+export function setAutoDownloadDisabled(disabled: boolean) {
+  autoDownloadDisabled = disabled;
+  autoUpdater.autoDownload = !disabled;
+  log.info(`Auto-download ${disabled ? 'disabled' : 'enabled'}`);
+}
+
+export function getAutoDownloadDisabled(): boolean {
+  return autoDownloadDisabled;
+}
+
 // Register IPC handlers (only once)
 export function registerUpdateIpcHandlers(updateRuntime: DesktopUpdateRuntime) {
   desktopUpdateRuntime = updateRuntime;
@@ -180,9 +192,12 @@ export function registerUpdateIpcHandlers(updateRuntime: DesktopUpdateRuntime) {
             updateTrayIcon(true);
             sendStatusToWindow('update-available', { version: result.latestVersion });
 
-            // Auto-download for GitHub fallback (matching autoDownload behavior)
-            log.info('Auto-downloading update via GitHub fallback...');
-            await githubAutoDownload(result.downloadUrl!, result.latestVersion!, 'manual check');
+            if (!autoDownloadDisabled) {
+              log.info('Auto-downloading update via GitHub fallback...');
+              await githubAutoDownload(result.downloadUrl!, result.latestVersion!, 'manual check');
+            } else {
+              log.info('Auto-download disabled — skipping GitHub fallback download');
+            }
           } else {
             trackUpdateCheckCompleted('not_available', currentVersion, {
               latestVersion: result.latestVersion,
@@ -371,6 +386,10 @@ export function registerUpdateIpcHandlers(updateRuntime: DesktopUpdateRuntime) {
   ipcMain.handle('is-using-github-fallback', () => {
     return isUsingGitHubFallback;
   });
+
+  ipcMain.handle('get-auto-download-disabled', () => {
+    return autoDownloadDisabled;
+  });
 }
 
 export function setupAutoUpdater(updateRuntime: DesktopUpdateRuntime, tray?: Tray) {
@@ -413,8 +432,17 @@ export function setupAutoUpdater(updateRuntime: DesktopUpdateRuntime, tray?: Tra
     log.error('Error getting feed URL:', e);
   }
 
+  // Respect GOOSE_DISABLE_AUTO_DOWNLOAD env var (takes precedence over user setting)
+  const envDisabled =
+    process.env.GOOSE_DISABLE_AUTO_DOWNLOAD === '1' ||
+    process.env.GOOSE_DISABLE_AUTO_DOWNLOAD === 'true';
+  if (envDisabled) {
+    autoDownloadDisabled = true;
+    log.info('Auto-download disabled via GOOSE_DISABLE_AUTO_DOWNLOAD environment variable');
+  }
+
   // Configure auto-updater settings
-  autoUpdater.autoDownload = true; // Automatically download updates when available
+  autoUpdater.autoDownload = !autoDownloadDisabled;
   autoUpdater.autoInstallOnAppQuit = true;
 
   // Enable updates in development mode for testing
@@ -530,9 +558,12 @@ export function setupAutoUpdater(updateRuntime: DesktopUpdateRuntime, tray?: Tra
                 updateTrayIcon(true);
                 sendStatusToWindow('update-available', { version: result.latestVersion });
 
-                // Auto-download for GitHub fallback (matching autoDownload behavior)
-                log.info('Auto-downloading update via GitHub fallback on startup...');
-                await githubAutoDownload(result.downloadUrl!, result.latestVersion!, 'on startup');
+                if (!autoDownloadDisabled) {
+                  log.info('Auto-downloading update via GitHub fallback on startup...');
+                  await githubAutoDownload(result.downloadUrl!, result.latestVersion!, 'on startup');
+                } else {
+                  log.info('Auto-download disabled — skipping GitHub fallback download on startup');
+                }
               } else {
                 trackUpdateCheckCompleted('not_available', currentVersion, {
                   latestVersion: result.latestVersion,
@@ -578,7 +609,9 @@ export function setupAutoUpdater(updateRuntime: DesktopUpdateRuntime, tray?: Tra
       latestVersion: info.version,
       usingFallback: false,
     });
-    trackUpdateDownloadStarted(info.version, 'electron-updater');
+    if (!autoDownloadDisabled) {
+      trackUpdateDownloadStarted(info.version, 'electron-updater');
+    }
     updateAvailable = true;
     lastUpdateState = { updateAvailable: true, latestVersion: info.version };
     updateTrayIcon(true);
@@ -636,9 +669,12 @@ export function setupAutoUpdater(updateRuntime: DesktopUpdateRuntime, tray?: Tra
           updateTrayIcon(true);
           sendStatusToWindow('update-available', { version: result.latestVersion });
 
-          // Auto-download for GitHub fallback (matching autoDownload behavior)
-          log.info('Auto-downloading update via GitHub fallback after error...');
-          await githubAutoDownload(result.downloadUrl!, result.latestVersion!, 'after error');
+          if (!autoDownloadDisabled) {
+            log.info('Auto-downloading update via GitHub fallback after error...');
+            await githubAutoDownload(result.downloadUrl!, result.latestVersion!, 'after error');
+          } else {
+            log.info('Auto-download disabled — skipping GitHub fallback download after error');
+          }
         } else {
           updateAvailable = false;
           updateTrayIcon(false);
