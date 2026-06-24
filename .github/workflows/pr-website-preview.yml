@@ -54,7 +54,6 @@ jobs:
 
       - name: Deploy preview to Cloudflare Pages
         id: cloudflare-pages
-        if: ${{ secrets.PAGES_PR_PREVIEW_CF_ACCOUNT_ID != '' && secrets.PAGES_PR_PREVIEW_CF_API_TOKEN != '' && secrets.PAGES_PR_PREVIEW_CF_PAGES_PROJECT_NAME != '' }}
         working-directory: ./documentation
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.PAGES_PR_PREVIEW_CF_ACCOUNT_ID }}
@@ -63,6 +62,12 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         run: |
           set -euo pipefail
+
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ] || [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_PAGES_PROJECT_NAME}" ]; then
+            echo "Cloudflare Pages preview secrets are not configured; skipping preview deploy."
+            echo "preview-url=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           output=$(npx --yes wrangler@latest pages deploy build \
             --project-name="$CLOUDFLARE_PAGES_PROJECT_NAME" \
@@ -76,10 +81,6 @@ jobs:
           fi
 
           echo "preview-url=$preview_url" >> "$GITHUB_OUTPUT"
-
-      - name: Skip Cloudflare Pages deploy when preview secrets are absent
-        if: ${{ secrets.PAGES_PR_PREVIEW_CF_ACCOUNT_ID == '' || secrets.PAGES_PR_PREVIEW_CF_API_TOKEN == '' || secrets.PAGES_PR_PREVIEW_CF_PAGES_PROJECT_NAME == '' }}
-        run: echo "Cloudflare Pages preview secrets are not configured; skipping preview deploy."
 
       - name: Comment preview URL
         if: ${{ steps.cloudflare-pages.outputs.preview-url != '' }}
