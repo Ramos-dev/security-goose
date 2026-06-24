@@ -8,6 +8,7 @@ on:
       - synchronize
     paths:
       - 'documentation/**'
+      - '.github/workflows/pr-website-preview.yml'
 
 concurrency:
   group: docs-preview-${{ github.event.pull_request.number }}
@@ -53,6 +54,7 @@ jobs:
 
       - name: Deploy preview to Cloudflare Pages
         id: cloudflare-pages
+        if: ${{ secrets.PAGES_PR_PREVIEW_CF_ACCOUNT_ID != '' && secrets.PAGES_PR_PREVIEW_CF_API_TOKEN != '' && secrets.PAGES_PR_PREVIEW_CF_PAGES_PROJECT_NAME != '' }}
         working-directory: ./documentation
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.PAGES_PR_PREVIEW_CF_ACCOUNT_ID }}
@@ -75,7 +77,12 @@ jobs:
 
           echo "preview-url=$preview_url" >> "$GITHUB_OUTPUT"
 
+      - name: Skip Cloudflare Pages deploy when preview secrets are absent
+        if: ${{ secrets.PAGES_PR_PREVIEW_CF_ACCOUNT_ID == '' || secrets.PAGES_PR_PREVIEW_CF_API_TOKEN == '' || secrets.PAGES_PR_PREVIEW_CF_PAGES_PROJECT_NAME == '' }}
+        run: echo "Cloudflare Pages preview secrets are not configured; skipping preview deploy."
+
       - name: Comment preview URL
+        if: ${{ steps.cloudflare-pages.outputs.preview-url != '' }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
         env:
           PREVIEW_URL: ${{ steps.cloudflare-pages.outputs.preview-url }}
