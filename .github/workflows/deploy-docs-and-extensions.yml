@@ -54,14 +54,41 @@ jobs:
         working-directory: ./documentation
         run: ./scripts/verify-build.sh
 
+      - name: Detect GitHub Pages configuration
+        id: pages-site
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        with:
+          script: |
+            try {
+              await github.rest.repos.getPages({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              core.setOutput('configured', 'true');
+            } catch (error) {
+              if (error.status === 404) {
+                core.info('GitHub Pages is not configured for this repository; skipping deploy.');
+                core.setOutput('configured', 'false');
+                return;
+              }
+              throw error;
+            }
+
+      - name: Skip GitHub Pages deploy when Pages is not configured
+        if: ${{ steps.pages-site.outputs.configured != 'true' }}
+        run: echo "GitHub Pages is not configured for $GITHUB_REPOSITORY; skipping deployment."
+
       - name: Configure GitHub Pages
+        if: ${{ steps.pages-site.outputs.configured == 'true' }}
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
 
       - name: Upload GitHub Pages artifact
+        if: ${{ steps.pages-site.outputs.configured == 'true' }}
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: documentation/build
 
       - name: Deploy to GitHub Pages
         id: deployment
+        if: ${{ steps.pages-site.outputs.configured == 'true' }}
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128  # v5.0.0
