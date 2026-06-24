@@ -20,8 +20,10 @@ function mockElectron() {
     getVersion: vi.fn(() => '1.37.0'),
     getUpdateState: vi.fn(async () => null),
     isUsingGitHubFallback: vi.fn(async () => false),
+    getAutoDownloadDisabled: vi.fn(async () => false),
     onUpdaterEvent: vi.fn(),
     checkForUpdates: vi.fn(async () => ({ updateInfo: null, error: null })),
+    downloadUpdate: vi.fn(async () => ({ success: true, error: null })),
     installUpdate: vi.fn(),
   });
 }

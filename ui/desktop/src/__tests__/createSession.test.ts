@@ -38,6 +38,17 @@ const configuredExtension = (name: string, enabled: boolean): FixedExtensionEntr
 const mockedStartAgent = vi.mocked(startAgent);
 const mockedReadConfig = vi.mocked(readConfig);
 const mockedSetConfigProvider = vi.mocked(setConfigProvider);
+const configReadRequest = new globalThis.Request('http://localhost/config/read');
+const configReadResponse = new globalThis.Response();
+
+function mockedConfigReadResult(data: string) {
+  return {
+    data,
+    error: undefined,
+    request: configReadRequest,
+    response: configReadResponse,
+  };
+}
 
 describe('createSession extension overrides', () => {
   beforeEach(() => {
@@ -45,9 +56,9 @@ describe('createSession extension overrides', () => {
     mockedReadConfig.mockReset();
     mockedSetConfigProvider.mockReset();
 
-    mockedReadConfig.mockImplementation(async ({ body }) => ({
-      data: body.key === 'GOOSE_PROVIDER' ? 'openai' : 'gpt-4.1',
-    }));
+    mockedReadConfig.mockImplementation(async ({ body }) =>
+      mockedConfigReadResult(body.key === 'GOOSE_PROVIDER' ? 'openai' : 'gpt-4.1')
+    );
     mockedStartAgent.mockResolvedValue({
       data: testSession,
       error: undefined,
