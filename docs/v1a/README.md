@@ -82,6 +82,12 @@ V1 的定义：
 - [11-bootstrap-audit.md](./11-bootstrap-audit.md)
   Goose 当前入口、`distro/security-cn` 骨架、以及 spec 与实现冲突的最小修正说明
 
+- [12-current-state-and-parallel-goals.md](./12-current-state-and-parallel-goals.md)
+  当前分支开发进展审计、剩余 backlog，以及按 session / goal 并行推进的建议
+
+- [13-session-execution-playbooks.md](./13-session-execution-playbooks.md)
+  各并行 session 的扩展执行方案，包括开工 prompt、分支建议、阶段节奏、验收命令与 handoff 模板
+
 - 示例配置：
   - [init-config.yaml.example](./examples/init-config.yaml.example)
   - [desktop-env.example](./examples/desktop-env.example)

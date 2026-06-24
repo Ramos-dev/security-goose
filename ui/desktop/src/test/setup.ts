@@ -80,6 +80,7 @@ const mockSettings: Record<string, unknown> = {
   },
   theme: 'light',
   useSystemTheme: true,
+  language: 'system',
   responseStyle: 'concise',
   showPricing: true,
   sessionSharing: {
@@ -95,11 +96,20 @@ if (typeof window !== 'undefined') {
     writable: true,
     value: {
       platform: 'darwin',
+      getVersion: vi.fn(() => '1.37.0'),
       getSetting: vi.fn((key: string) => Promise.resolve(mockSettings[key])),
       setSetting: vi.fn((key: string, value: unknown) => {
         mockSettings[key] = value;
         return Promise.resolve();
       }),
+      getUpdateState: vi.fn(async () => null),
+      isUsingGitHubFallback: vi.fn(async () => false),
+      getAutoDownloadDisabled: vi.fn(async () => false),
+      checkForUpdates: vi.fn(async () => ({ updateInfo: null, error: null })),
+      downloadUpdate: vi.fn(async () => ({ success: true, error: null })),
+      installUpdate: vi.fn(),
+      onUpdaterEvent: vi.fn(),
+      reloadApp: vi.fn(),
       showMessageBox: vi.fn(() => Promise.resolve({ response: 0 })),
       getIsFullScreen: vi.fn(() => Promise.resolve(false)),
       listManagedSkills: vi.fn(async () => ({

@@ -189,6 +189,7 @@ type ElectronAPI = {
   onUpdaterEvent: (callback: (event: UpdaterEvent) => void) => void;
   getUpdateState: () => Promise<{ updateAvailable: boolean; latestVersion?: string } | null>;
   isUsingGitHubFallback: () => Promise<boolean>;
+  getAutoDownloadDisabled: () => Promise<boolean>;
   // Recipe warning functions
   closeWindow: () => void;
   hasAcceptedRecipeBefore: (recipe: Recipe) => Promise<boolean>;
@@ -356,6 +357,9 @@ const electronAPI: ElectronAPI = {
   isUsingGitHubFallback: (): Promise<boolean> => {
     return ipcRenderer.invoke('is-using-github-fallback');
   },
+  getAutoDownloadDisabled: (): Promise<boolean> => {
+    return ipcRenderer.invoke('get-auto-download-disabled');
+  },
   closeWindow: () => ipcRenderer.send('close-window'),
   hasAcceptedRecipeBefore: (recipe: Recipe) =>
     ipcRenderer.invoke('has-accepted-recipe-before', recipe),
@@ -377,9 +381,17 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('restore-bundled-skill', { workingDir, skillId }),
 };
 
+function getAppLocale(): unknown {
+  try {
+    return ipcRenderer.sendSync('get-app-locale') ?? config.GOOSE_LOCALE;
+  } catch {
+    return config.GOOSE_LOCALE;
+  }
+}
+
 const appConfigAPI: AppConfigAPI = {
-  get: (key: string) => config[key],
-  getAll: () => config,
+  get: (key: string) => (key === 'GOOSE_LOCALE' ? getAppLocale() : config[key]),
+  getAll: () => ({ ...config, GOOSE_LOCALE: getAppLocale() }),
 };
 
 // Expose the APIs
